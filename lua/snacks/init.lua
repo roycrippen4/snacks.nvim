@@ -82,6 +82,10 @@ end
 function M.setup(opts)
   config = vim.tbl_deep_extend("force", config, opts or {})
 
+  if vim.fn.has("nvim-0.9.4") ~= 1 then
+    return vim.notify("snacks.nvim requires Neovim >= 0.9.4", vim.log.levels.ERROR, { title = "snacks.nvim" })
+  end
+
   local group = vim.api.nvim_create_augroup("snacks", { clear = true })
 
   local events = {

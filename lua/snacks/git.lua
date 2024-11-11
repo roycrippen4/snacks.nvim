@@ -1,5 +1,4 @@
 ---@class snacks.git
----@hide
 local M = {}
 
 Snacks.config.style("blame_line", {

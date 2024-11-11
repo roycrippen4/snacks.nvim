@@ -1,4 +1,4 @@
-*snacks-git.txt*            For Neovim           Last change: 2024 November 07
+*snacks-git.txt*                                                   snacks.nvim
 
 ==============================================================================
 Table of Contents                               *snacks-git-table-of-contents*
@@ -31,7 +31,7 @@ BLAME_LINE                                      *snacks-git-styles-blame_line*
 2. Module                                                  *snacks-git-module*
 
 
-SNACKS.GIT.BLAME_LINE()            *snacks-git-module-snacks.git.blame_line()*
+`Snacks.git.blame_line()`                            *Snacks.git.blame_line()*
 
 Show git log for the current line.
 
@@ -41,7 +41,7 @@ Show git log for the current line.
 <
 
 
-SNACKS.GIT.GET_ROOT()                *snacks-git-module-snacks.git.get_root()*
+`Snacks.git.get_root()`                                *Snacks.git.get_root()*
 
 Gets the git root for a buffer or path. Defaults to the current buffer.
 

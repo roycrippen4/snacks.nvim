@@ -1,4 +1,4 @@
-*snacks-notify.txt*          For Neovim          Last change: 2024 November 07
+*snacks-notify.txt*                                                snacks.nvim
 
 ==============================================================================
 Table of Contents                            *snacks-notify-table-of-contents*
@@ -23,7 +23,7 @@ Table of Contents                            *snacks-notify-table-of-contents*
 2. Module                                               *snacks-notify-module*
 
 
-SNACKS.NOTIFY()                         *snacks-notify-module-snacks.notify()*
+`Snacks.notify()`                                            *Snacks.notify()*
 
 >lua
     ---@type fun(msg: string|string[], opts?: snacks.notify.Opts)
@@ -31,7 +31,7 @@ SNACKS.NOTIFY()                         *snacks-notify-module-snacks.notify()*
 <
 
 
-SNACKS.NOTIFY.ERROR()             *snacks-notify-module-snacks.notify.error()*
+`Snacks.notify.error()`                                *Snacks.notify.error()*
 
 >lua
     ---@param msg string|string[]
@@ -40,7 +40,7 @@ SNACKS.NOTIFY.ERROR()             *snacks-notify-module-snacks.notify.error()*
 <
 
 
-SNACKS.NOTIFY.INFO()               *snacks-notify-module-snacks.notify.info()*
+`Snacks.notify.info()`                                  *Snacks.notify.info()*
 
 >lua
     ---@param msg string|string[]
@@ -49,7 +49,7 @@ SNACKS.NOTIFY.INFO()               *snacks-notify-module-snacks.notify.info()*
 <
 
 
-SNACKS.NOTIFY.NOTIFY()           *snacks-notify-module-snacks.notify.notify()*
+`Snacks.notify.notify()`                              *Snacks.notify.notify()*
 
 >lua
     ---@param msg string|string[]
@@ -58,7 +58,7 @@ SNACKS.NOTIFY.NOTIFY()           *snacks-notify-module-snacks.notify.notify()*
 <
 
 
-SNACKS.NOTIFY.WARN()               *snacks-notify-module-snacks.notify.warn()*
+`Snacks.notify.warn()`                                  *Snacks.notify.warn()*
 
 >lua
     ---@param msg string|string[]

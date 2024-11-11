@@ -35,7 +35,7 @@ local git_remotes_cases = {
 describe("util.lazygit", function()
   for remote, expected in pairs(git_remotes_cases) do
     it("should parse git remote " .. remote, function()
-      local url = gitbrowse.get_url(remote)
+      local url = gitbrowse.get_repo(remote)
       assert.are.equal(expected, url)
     end)
   end

@@ -20,3 +20,19 @@
   refresh = 50, -- refresh at most every 50ms
 }
 ```
+
+## 📦 Module
+
+### `Snacks.statuscolumn()`
+
+```lua
+---@type fun(): string
+Snacks.statuscolumn()
+```
+
+### `Snacks.statuscolumn.get()`
+
+```lua
+---@return string
+Snacks.statuscolumn.get()
+```

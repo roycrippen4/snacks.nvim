@@ -8,6 +8,7 @@ local defaults = {
   exclude = { "latex" },
 }
 
+---@private
 function M.setup()
   local opts = Snacks.config.get("quickfile", defaults)
   -- Skip if we already entered vim

@@ -1,4 +1,3 @@
----@hide
 ---@class snacks.words
 local M = {}
 
@@ -9,6 +8,11 @@ local M = {}
 local defaults = {
   enabled = true, -- enable/disable the plugin
   debounce = 200, -- time in ms to wait before updating
+  notify_jump = false, -- show a notification when jumping
+  notify_end = true, -- show a notification when reaching the end
+  foldopen = true, -- open folds after jumping
+  jumplist = true, -- set jump point before jumping
+  modes = { "n", "i", "c" }, -- modes to show references
 }
 
 local config = Snacks.config.get("words", defaults)
@@ -19,14 +23,22 @@ local timer = (vim.uv or vim.loop).new_timer()
 function M.setup()
   local group = vim.api.nvim_create_augroup("snacks_words", { clear = true })
 
-  vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+  vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "ModeChanged" }, {
     group = group,
     callback = function()
+      if not M.is_enabled() then
+        M.clear()
+        return
+      end
       if not ({ M.get() })[2] then
         M.update()
       end
     end,
   })
+end
+
+function M.clear()
+  vim.lsp.buf.clear_references()
 end
 
 ---@private
@@ -40,7 +52,7 @@ function M.update()
             return
           end
           vim.lsp.buf.document_highlight()
-          vim.lsp.buf.clear_references()
+          M.clear()
         end)
       end
     end)
@@ -49,12 +61,16 @@ end
 
 ---@param buf number?
 function M.is_enabled(buf)
-  return config.enabled
-    and #vim.lsp.get_clients({
-        method = vim.lsp.protocol.Methods.textDocument_documentHighlight,
-        bufnr = buf or 0,
-      })
-      > 0
+  buf = buf or vim.api.nvim_get_current_buf()
+  local mode = vim.api.nvim_get_mode().mode:lower()
+  mode = mode:gsub("\22", "v"):gsub("\19", "s")
+  mode = mode:sub(1, 2) == "no" and "o" or mode
+  mode = mode:sub(1, 1):match("[ncitsvo]") or "n"
+  local clients = (vim.lsp.get_clients or vim.lsp.get_active_clients)({ bufnr = buf })
+  clients = vim.tbl_filter(function(client)
+    return client.supports_method("textDocument/documentHighlight", { bufnr = buf })
+  end, clients)
+  return config.enabled and vim.tbl_contains(config.modes, mode) and #clients > 0
 end
 
 ---@private
@@ -88,7 +104,18 @@ function M.jump(count, cycle)
   end
   local target = words[idx]
   if target then
+    if config.jumplist then
+      vim.cmd.normal({ "m`", bang = true })
+    end
     vim.api.nvim_win_set_cursor(0, target.from)
+    if config.notify_jump then
+      Snacks.notify.info(("Reference [%d/%d]"):format(idx, #words), { id = "snacks.words.jump", title = "Words" })
+    end
+    if config.foldopen then
+      vim.cmd.normal({ "zv", bang = true })
+    end
+  elseif config.notify_end then
+    Snacks.notify.warn("No more references", { id = "snacks.words.jump", title = "Words" })
   end
 end
 

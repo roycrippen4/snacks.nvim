@@ -63,12 +63,14 @@ Based on the provided options, some defaults will be set:
   wo = {},
   keys = {
     gf = function(self)
-      local f = vim.fn.findfile(vim.fn.expand("<cfile>"))
+      local f = vim.fn.findfile(vim.fn.expand("<cfile>"), "**")
       if f == "" then
         Snacks.notify.warn("No file under cursor")
       else
-        self:close()
-        vim.cmd("e " .. f)
+        self:hide()
+        vim.schedule(function()
+          vim.cmd("e " .. f)
+        end)
       end
     end,
     term_normal = {

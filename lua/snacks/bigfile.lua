@@ -16,6 +16,7 @@ local defaults = {
   end,
 }
 
+---@private
 function M.setup()
   local opts = Snacks.config.get("bigfile", defaults)
 

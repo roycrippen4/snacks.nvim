@@ -1,4 +1,4 @@
-*snacks-gitbrowse.txt*         For Neovim        Last change: 2024 November 07
+*snacks-gitbrowse.txt*                                             snacks.nvim
 
 ==============================================================================
 Table of Contents                         *snacks-gitbrowse-table-of-contents*
@@ -6,6 +6,7 @@ Table of Contents                         *snacks-gitbrowse-table-of-contents*
 1. Config                                            |snacks-gitbrowse-config|
 2. Module                                            |snacks-gitbrowse-module|
   - Snacks.gitbrowse()            |snacks-gitbrowse-module-snacks.gitbrowse()|
+  - Snacks.gitbrowse.get_url()|snacks-gitbrowse-module-snacks.gitbrowse.get_url()|
   - Snacks.gitbrowse.open()  |snacks-gitbrowse-module-snacks.gitbrowse.open()|
 Open the repo of the active file in the browser (e.g., GitHub)
 
@@ -25,8 +26,10 @@ Open the repo of the active file in the browser (e.g., GitHub)
         end
         vim.ui.open(url)
       end,
+      ---@type "repo" | "branch" | "file"
+      what = "file", -- what to open. not all remotes support all types
       -- patterns to transform remotes to an actual URL
-      patterns = {
+      remote_patterns = {
         { "^(https?://.*)%.git$"              , "%1" },
         { "^git@(.+):(.+)%.git$"              , "https://%1/%2" },
         { "^git@(.+):(.+)$"                   , "https://%1/%2" },
@@ -40,6 +43,16 @@ Open the repo of the active file in the browser (e.g., GitHub)
         { ":%d+"                              , "" },
         { "%.git$"                            , "" },
       },
+      url_patterns = {
+        ["github.com"] = {
+          branch = "/tree/{branch}",
+          file = "/blob/{branch}/{file}#L{line}",
+        },
+        ["gitlab.com"] = {
+          branch = "/-/tree/{branch}",
+          file = "/-/blob/{branch}/{file}#L{line}",
+        },
+      },
     }
 <
 
@@ -48,7 +61,7 @@ Open the repo of the active file in the browser (e.g., GitHub)
 2. Module                                            *snacks-gitbrowse-module*
 
 
-SNACKS.GITBROWSE()                *snacks-gitbrowse-module-snacks.gitbrowse()*
+`Snacks.gitbrowse()`                                      *Snacks.gitbrowse()*
 
 >lua
     ---@type fun(opts?: snacks.gitbrowse.Config)
@@ -56,7 +69,16 @@ SNACKS.GITBROWSE()                *snacks-gitbrowse-module-snacks.gitbrowse()*
 <
 
 
-SNACKS.GITBROWSE.OPEN()      *snacks-gitbrowse-module-snacks.gitbrowse.open()*
+`Snacks.gitbrowse.get_url()`                      *Snacks.gitbrowse.get_url()*
+
+>lua
+    ---@param repo string
+    ---@param opts? snacks.gitbrowse.Config
+    Snacks.gitbrowse.get_url(repo, opts)
+<
+
+
+`Snacks.gitbrowse.open()`                            *Snacks.gitbrowse.open()*
 
 >lua
     ---@param opts? snacks.gitbrowse.Config

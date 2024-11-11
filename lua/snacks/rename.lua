@@ -1,4 +1,3 @@
----@hide
 ---@class snacks.rename
 local M = {}
 
@@ -51,7 +50,7 @@ function M.on_rename_file(from, to, rename)
     newUri = vim.uri_from_fname(to),
   } } }
 
-  local clients = vim.lsp.get_clients()
+  local clients = (vim.lsp.get_clients or vim.lsp.get_active_clients)()
   for _, client in ipairs(clients) do
     if client.supports_method("workspace/willRenameFiles") then
       local resp = client.request_sync("workspace/willRenameFiles", changes, 1000, 0)

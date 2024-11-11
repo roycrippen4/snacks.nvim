@@ -13,5 +13,13 @@ fi
 PANVIMDOC=~/projects/panvimdoc
 
 for f in docs/*.md; do
-  $PANVIMDOC/panvimdoc.sh --project-name "snacks-$(basename "$f" .md)" --input-file "$f" --vim-version "Neovim" --demojify "true" --shift-heading-level-by -1
+  $PANVIMDOC/panvimdoc.sh \
+    --project-name "snacks-$(basename "$f" .md)" \
+    --description "snacks.nvim" \
+    --input-file "$f" \
+    --vim-version "Neovim" \
+    --demojify "true" \
+    --shift-heading-level-by -1
 done
+
+nvim -u tests/minit.lua --headless +'lua require("snacks.docs").fix_titles()' +qa

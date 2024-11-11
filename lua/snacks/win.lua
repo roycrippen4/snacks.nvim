@@ -20,6 +20,8 @@ local M = setmetatable({}, {
 ---@class snacks.win.Config: vim.api.keyset.win_config
 ---@field style? string merges with config from `Snacks.config.styles[style]`
 ---@field show? boolean Show the window immediately (default: true)
+---@field height? number Height of the window. Use <1 for relative height. 0 means full height. (default: 0.9)
+---@field width? number Width of the window. Use <1 for relative width. 0 means full width. (default: 0.9)
 ---@field minimal? boolean Disable a bunch of options to make the window minimal (default: true)
 ---@field position? "float"|"bottom"|"top"|"left"|"right"
 ---@field buf? number If set, use this buffer instead of creating a new one
@@ -326,10 +328,14 @@ function M:equalize()
 end
 
 function M:update()
-  if self:valid() and self:is_floating() then
-    local opts = self:win_opts()
-    opts.noautocmd = nil
-    vim.api.nvim_win_set_config(self.win, opts)
+  if self:valid() then
+    self:set_options("buf")
+    self:set_options("win")
+    if self:is_floating() then
+      local opts = self:win_opts()
+      opts.noautocmd = nil
+      vim.api.nvim_win_set_config(self.win, opts)
+    end
   end
 end
 
@@ -338,10 +344,16 @@ function M:show()
     self:update()
     return self
   end
-  self.augroup = vim.api.nvim_create_augroup("snacks_win_" .. id, { clear = true })
+  self.augroup = vim.api.nvim_create_augroup("snacks_win_" .. self.id, { clear = true })
 
   self:open_buf()
+
+  -- OPTIM: prevent treesitter or syntax highlighting to attach on FileType if it's not already enabled
+  local optim_hl = not vim.b[self.buf].ts_highlight and vim.bo[self.buf].syntax == ""
+  vim.b[self.buf].ts_highlight = optim_hl or vim.b[self.buf].ts_highlight
   self:set_options("buf")
+  vim.b[self.buf].ts_highlight = not optim_hl and vim.b[self.buf].ts_highlight or nil
+
   if self.opts.on_buf then
     self.opts.on_buf(self)
   end
@@ -355,13 +367,11 @@ function M:show()
     self.opts.on_win(self)
   end
 
+  -- syntax highlighting
   local ft = self.opts.ft or vim.bo[self.buf].filetype
-  if ft then
-    local lang = ft and vim.treesitter.language.get_lang(ft)
-    if lang and not vim.b[self.buf].ts_highlight and not pcall(vim.treesitter.start, self.buf, lang) then
-      lang = nil
-    end
-    if ft and not lang then
+  if ft and not vim.b[self.buf].ts_highlight and vim.bo[self.buf].syntax == "" then
+    local lang = vim.treesitter.language.get_lang(ft)
+    if not (lang and pcall(vim.treesitter.start, self.buf, lang)) then
       vim.bo[self.buf].syntax = ft
     end
   end

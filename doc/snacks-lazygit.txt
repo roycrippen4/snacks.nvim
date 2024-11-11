@@ -1,4 +1,4 @@
-*snacks-lazygit.txt*          For Neovim         Last change: 2024 November 07
+*snacks-lazygit.txt*                                               snacks.nvim
 
 ==============================================================================
 Table of Contents                           *snacks-lazygit-table-of-contents*
@@ -28,6 +28,13 @@ colorscheme and integrate edit with the current neovim instance.
       -- automatically configure lazygit to use the current colorscheme
       -- and integrate edit with the current neovim instance
       configure = true,
+      -- extra configuration for lazygit that will be merged with the default
+      -- snacks does NOT have a full yaml parser, so if you need `"test"` to appear with the quotes
+      -- you need to double quote it: `"\"test\""`
+      config = {
+        os = { editPreset = "nvim-remote" },
+        gui = { nerdFontsVersion = "3" },
+      },
       theme_path = vim.fs.normalize(vim.fn.stdpath("cache") .. "/lazygit-theme.yml"),
       -- Theme for lazygit
       theme = {
@@ -85,7 +92,7 @@ LAZYGIT                                        *snacks-lazygit-styles-lazygit*
 4. Module                                              *snacks-lazygit-module*
 
 
-SNACKS.LAZYGIT()                      *snacks-lazygit-module-snacks.lazygit()*
+`Snacks.lazygit()`                                          *Snacks.lazygit()*
 
 >lua
     ---@type fun(opts?: snacks.lazygit.Config): snacks.win
@@ -93,7 +100,7 @@ SNACKS.LAZYGIT()                      *snacks-lazygit-module-snacks.lazygit()*
 <
 
 
-SNACKS.LAZYGIT.LOG()              *snacks-lazygit-module-snacks.lazygit.log()*
+`Snacks.lazygit.log()`                                  *Snacks.lazygit.log()*
 
 Opens lazygit with the log view
 
@@ -103,7 +110,7 @@ Opens lazygit with the log view
 <
 
 
-SNACKS.LAZYGIT.LOG_FILE()    *snacks-lazygit-module-snacks.lazygit.log_file()*
+`Snacks.lazygit.log_file()`                        *Snacks.lazygit.log_file()*
 
 Opens lazygit with the log of the current file
 
@@ -113,7 +120,7 @@ Opens lazygit with the log of the current file
 <
 
 
-SNACKS.LAZYGIT.OPEN()            *snacks-lazygit-module-snacks.lazygit.open()*
+`Snacks.lazygit.open()`                                *Snacks.lazygit.open()*
 
 Opens lazygit, properly configured to use the current colorscheme and integrate
 with the current neovim instance

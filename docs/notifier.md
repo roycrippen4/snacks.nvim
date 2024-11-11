@@ -33,7 +33,7 @@ vim.api.nvim_create_autocmd("LspProgress", {
       id = "lsp_progress",
       title = "LSP Progress",
       opts = function(notif)
-        notif.icon = ev.data.params.value == "end" and " "
+        notif.icon = ev.data.params.value.kind == "end" and " "
           or spinner[math.floor(vim.uv.hrtime() / (1e6 * 80)) % #spinner + 1]
       end,
     })
@@ -121,6 +121,7 @@ vim.api.nvim_create_autocmd("LspProgress", {
   style = "compact",
   top_down = true, -- place notifications from top to bottom
   date_format = "%R", -- time format for notifications
+  refresh = 50, -- refresh at most every 50ms
 }
 ```
 
@@ -205,7 +206,7 @@ Notification object
 ---@field updated number timestamp with nano precision
 ---@field shown? number timestamp with nano precision
 ---@field hidden? number timestamp with nano precision
----@field layout? { top?: number, size: { width: number, height: number }}
+---@field layout? { top?: number, width: number, height: number }
 ```
 
 ### Rendering

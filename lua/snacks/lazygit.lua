@@ -1,4 +1,3 @@
----@hide
 ---@class snacks.lazygit
 ---@overload fun(opts?: snacks.lazygit.Config): snacks.win
 local M = setmetatable({}, {
@@ -27,6 +26,13 @@ local defaults = {
   -- automatically configure lazygit to use the current colorscheme
   -- and integrate edit with the current neovim instance
   configure = true,
+  -- extra configuration for lazygit that will be merged with the default
+  -- snacks does NOT have a full yaml parser, so if you need `"test"` to appear with the quotes
+  -- you need to double quote it: `"\"test\""`
+  config = {
+    os = { editPreset = "nvim-remote" },
+    gui = { nerdFontsVersion = "3" },
+  },
   theme_path = vim.fs.normalize(vim.fn.stdpath("cache") .. "/lazygit-theme.yml"),
   -- Theme for lazygit
   -- stylua: ignore
@@ -63,23 +69,19 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 ---@param opts snacks.lazygit.Config
 local function env(opts)
   if not config_dir then
-    local proc = vim.system({ "lazygit", "-cd" }, { text = true }):wait()
-    local lines = vim.split(proc.stdout, "\n", { plain = true })
+    local out = vim.fn.system({ "lazygit", "-cd" })
+    local lines = vim.split(out, "\n", { plain = true })
 
-    if proc.code == 0 then
+    if vim.v.shell_error == 0 and #lines > 1 then
       config_dir = vim.split(lines[1], "\n", { plain = true })[1]
       vim.env.LG_CONFIG_FILE = vim.fs.normalize(config_dir .. "/config.yml" .. "," .. opts.theme_path)
-      local custom_config = vim.fs.normalize(config_dir .. "/custom.yml")
-      if vim.uv.fs_stat(custom_config) and vim.uv.fs_stat(custom_config).type == "file" then
-        vim.env.LG_CONFIG_FILE = vim.env.LG_CONFIG_FILE .. "," .. custom_config
-      end
     else
       local msg = {
         "Failed to get **lazygit** config directory.",
         "Will not apply **lazygit** config.",
         "",
         "# Error:",
-        vim.trim(proc.stdout .. "\n" .. proc.stderr),
+        vim.trim(out),
       }
       Snacks.notify.error(msg, { title = "lazygit" })
     end
@@ -130,24 +132,30 @@ local function update_config(opts)
     end
   end
 
-  local config = [[
-os:
-  editPreset: "nvim-remote"
-gui:
-  nerdFontsVersion: 3
-  theme:
-]]
+  local config = vim.tbl_deep_extend("force", { gui = { theme = theme } }, opts.config or {})
 
-  ---@type string[]
-  local lines = {}
-  for k, v in pairs(theme) do
-    lines[#lines + 1] = ("    %s:"):format(k)
-    for _, c in ipairs(v) do
-      lines[#lines + 1] = ("      - %q"):format(c)
-    end
+  local function yaml_val(val)
+    return type(val) == "string" and not val:find("^\"'`") and ("%q"):format(val) or val
   end
-  config = config .. table.concat(lines, "\n")
-  vim.fn.writefile(vim.split(config, "\n", { plain = true }), opts.theme_path)
+
+  local function to_yaml(tbl, indent)
+    indent = indent or 0
+    local lines = {}
+    for k, v in pairs(tbl) do
+      table.insert(lines, string.rep(" ", indent) .. k .. (type(v) == "table" and ":" or ": " .. yaml_val(v)))
+      if type(v) == "table" then
+        if (vim.islist or vim.tbl_islist)(v) then
+          for _, item in ipairs(v) do
+            table.insert(lines, string.rep(" ", indent + 2) .. "- " .. yaml_val(item))
+          end
+        else
+          vim.list_extend(lines, to_yaml(v, indent + 2))
+        end
+      end
+    end
+    return lines
+  end
+  vim.fn.writefile(to_yaml(config), opts.theme_path)
   dirty = false
 end
 

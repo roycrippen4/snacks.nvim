@@ -1,63 +1,154 @@
 local M = {}
 
+local query = vim.treesitter.query.parse(
+  "lua",
+  [[
+    ;; top-level locals
+    ((variable_declaration (
+      assignment_statement 
+        (variable_list name: (identifier) @local_name)
+        (expression_list value: (_) @local_value)
+        (#match? @local_value "(setmetatable|\\{)")
+      )) @local
+      (#any-of? @local_name "M" "defaults" "config")
+      (#has-parent? @local chunk))
+
+    ;; top-level functions/methods
+    (function_declaration 
+      name: (_) @fun_name (#match? @fun_name "^M")
+      parameters: (_) @fun_params
+    ) @fun
+
+    ;; styles
+    (function_call
+      name: (dot_index_expression) @_sf (#eq? @_sf "Snacks.config.style")
+      arguments: (arguments
+        (string content: (string_content) @style_name)
+        (table_constructor) @style_config)
+    ) @style
+  ]]
+)
+
+---@class snacks.docs.Capture
+---@field name string
+---@field line number
+---@field node TSNode
+---@field text string
+---@field comment string
+---@field fields table<string, string>
+
+---@class snacks.docs.Parse
+---@field captures snacks.docs.Capture[]
+---@field comments string[]
+
+---@class snacks.docs.Info
+---@field config? string
+---@field mod? string
+---@field methods {name: string, args: string, comment?: string, types?: string, type: "method"|"function"}[]
+---@field types string[]
+---@field styles {name:string, opts:string}[]
+
 ---@param lines string[]
-function M.extract(lines)
-  local code = table.concat(lines, "\n")
-  local config = code:match("\n(%-%-%- ?@class snacks%.%w+%.Config.-\n})")
-  config = config or code:match("\n(%-%-%- ?@class snacks%.Config.-\n})")
-  local mod ---@type string
+function M.parse(lines)
+  local source = table.concat(lines, "\n")
+  local parser = vim.treesitter.get_string_parser(source, "lua")
+  parser:parse()
+
   local comments = {} ---@type string[]
-  local types = {} ---@type string[]
-  local styles = {} ---@type {name:string, opts:string}[]
-
-  local style_pattern = 'Snacks%.config%.style%("([^"]+)"%s*,%s*({.-}%s*)%)'
-
-  for style_name, style in code:gmatch(style_pattern) do
-    table.insert(styles, { name = style_name, opts = style })
-  end
-
-  ---@type {name: string, args: string, comment?: string, types?: string, type: "method"|"function"}[]
-  local methods = {}
-
-  for _, line in ipairs(lines) do
-    if line:match("^%-%-") then
-      table.insert(comments, line)
-    else
-      local comment = table.concat(comments, "\n")
-      if line:find("^local M =") then
-        mod = comment
-      elseif comment:find("@private") then
-      else
-        local t, name, args = line:match("^function M([:%.])([%w_%.]+)%((.-)%)")
-        if name and args then
-          if not name:find("^_") then
-            table.insert(methods, {
-              name = name,
-              args = args,
-              type = t,
-              comment = comment,
-            })
-          end
-        elseif #comments > 0 and line == "" then
-          table.insert(types, table.concat(comments, "\n"))
-        end
+  for l, line in ipairs(lines) do
+    if line:find("^%-%-") then
+      comments[l] = line
+      if comments[l - 1] then
+        comments[l] = comments[l - 1] .. "\n" .. comments[l]
+        comments[l - 1] = nil
       end
-      comments = {}
     end
   end
 
-  local private = mod and mod:find("@private")
-  config = config and config:gsub("local defaults = ", ""):gsub("local config = ", "") or nil
+  ---@type snacks.docs.Parse
+  local ret = { captures = {}, comments = {} }
 
-  ---@class snacks.docs.Info
+  for id, node in query:iter_captures(parser:trees()[1]:root(), source) do
+    local name = query.captures[id]
+    if not name:find("_") then
+      -- add fields
+      local fields = {}
+      for id2, node2 in query:iter_captures(node, source) do
+        local c = query.captures[id2]
+        if c:find(".+_") then
+          fields[c:gsub("^.*_", "")] = vim.treesitter.get_node_text(node2, source)
+        end
+      end
+
+      -- add comments
+      local comment = "" ---@type string
+      if comments[node:start()] then
+        comment = comments[node:start()]
+        comments[node:start()] = nil
+      end
+
+      table.insert(ret.captures, {
+        text = vim.treesitter.get_node_text(node, source),
+        name = name,
+        comment = comment,
+        line = node:start() + 1,
+        node = node,
+        fields = fields,
+      })
+    end
+  end
+
+  -- remove comments that are followed by code
+  for l in pairs(comments) do
+    if lines[l + 1] and lines[l + 1]:find("^.+$") then
+      comments[l] = nil
+    end
+  end
+  for l in ipairs(lines) do
+    if comments[l] then
+      table.insert(ret.comments, comments[l])
+    end
+  end
+
+  return ret
+end
+
+---@param lines string[]
+function M.extract(lines)
+  local parse = M.parse(lines)
+  ---@type snacks.docs.Info
   local ret = {
-    config = config,
-    mod = mod,
-    methods = methods,
-    types = types,
-    styles = styles,
+    methods = {},
+    types = vim.tbl_filter(function(c)
+      return not c:find("@private")
+    end, parse.comments),
+    styles = {},
   }
-  return private and { config = config, methods = {}, types = {}, styles = styles } or ret
+
+  for _, c in ipairs(parse.captures) do
+    if c.comment:find("@private") then
+      -- skip private
+    elseif c.name == "local" then
+      if vim.tbl_contains({ "defaults", "config" }, c.fields.name) then
+        ret.config = vim.trim(c.comment .. "\n" .. c.fields.value)
+      elseif c.fields.name == "M" then
+        ret.mod = c.comment
+      end
+    elseif c.name == "fun" then
+      local name = c.fields.name:sub(2)
+      local args = (c.fields.params or ""):sub(2, -2)
+      local comment = c.comment
+      local type = name:sub(1, 1)
+      name = name:sub(2)
+      if not name:find("^_") then
+        table.insert(ret.methods, { name = name, args = args, comment = comment, type = type })
+      end
+    elseif c.name == "style" then
+      table.insert(ret.styles, { name = c.fields.name, opts = c.fields.config })
+    end
+  end
+
+  return ret
 end
 
 ---@param tag string
@@ -75,6 +166,7 @@ end
 ---@param str string
 ---@param opts? {extract_comment: boolean} -- default true
 function M.md(str, opts)
+  str = str or ""
   opts = opts or {}
   if opts.extract_comment == nil then
     opts.extract_comment = true
@@ -161,7 +253,8 @@ function M.render(name, info)
       end
       return true
     end, mod_lines)
-    if not info.mod:find("@hide") then
+    local hide = #mod_lines == 1 and mod_lines[1]:find("@class")
+    if not hide then
       table.insert(mod_lines, prefix .. " = {}")
       add(M.md(table.concat(mod_lines, "\n")))
     end
@@ -236,6 +329,26 @@ function M._build()
     end
   end
   vim.cmd.checktime()
+end
+
+function M.fix_titles()
+  for file, t in vim.fs.dir("doc", { depth = 1 }) do
+    if t == "file" and file:find("%.txt$") then
+      local lines = vim.fn.readfile("doc/" .. file) --[[@as string[] ]]
+      for i, line in ipairs(lines) do
+        -- Example: SNACKS.GIT.BLAME_LINE()            *snacks-git-module-snacks.git.blame_line()*
+        local func = line:gsub("^SNACKS.*module%-snacks(.+%(%))%*$", "Snacks%1")
+        if func ~= line then
+          local left = ("`%s`"):format(func)
+          local right = ("*%s*"):format(func)
+          line = left .. string.rep(" ", #line - #left - #right) .. right
+          lines[i] = line
+        end
+      end
+      vim.fn.writefile(lines, "doc/" .. file)
+    end
+  end
+  vim.cmd.helptags("doc")
 end
 
 function M.build()

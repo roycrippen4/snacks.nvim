@@ -1,4 +1,4 @@
-*snacks-rename.txt*          For Neovim          Last change: 2024 November 07
+*snacks-rename.txt*                                                snacks.nvim
 
 ==============================================================================
 Table of Contents                            *snacks-rename-table-of-contents*
@@ -6,7 +6,8 @@ Table of Contents                            *snacks-rename-table-of-contents*
 1. Usage                                                 |snacks-rename-usage|
 2. mini.files                                       |snacks-rename-mini.files|
 3. neo-tree.nvim                                 |snacks-rename-neo-tree.nvim|
-4. Module                                               |snacks-rename-module|
+4. nvim-tree                                         |snacks-rename-nvim-tree|
+5. Module                                               |snacks-rename-module|
   - Snacks.rename.on_rename_file()|snacks-rename-module-snacks.rename.on_rename_file()|
   - Snacks.rename.rename_file()|snacks-rename-module-snacks.rename.rename_file()|
 LSP-integrated file renaming with support for plugins like neo-tree.nvim
@@ -53,10 +54,30 @@ LSP-integrated file renaming with support for plugins like neo-tree.nvim
 
 
 ==============================================================================
-4. Module                                               *snacks-rename-module*
+4. nvim-tree                                         *snacks-rename-nvim-tree*
+
+>lua
+    local prev = { new_name = "", old_name = "" } -- Prevents duplicate events
+    vim.api.nvim_create_autocmd("User", {
+      pattern = "NvimTreeSetup",
+      callback = function()
+        local events = require("nvim-tree.api").events
+        events.subscribe(events.Event.NodeRenamed, function(data)
+          if prev.new_name ~= data.new_name or prev.old_name ~= data.old_name then
+            data = data
+            Snacks.rename.on_rename_file(data.old_name, data.new_name)
+          end
+        end)
+      end,
+    })
+<
 
 
-SNACKS.RENAME.ON_RENAME_FILE()*snacks-rename-module-snacks.rename.on_rename_file()*
+==============================================================================
+5. Module                                               *snacks-rename-module*
+
+
+`Snacks.rename.on_rename_file()`                   *Snacks.rename.on_rename_file()*
 
 Lets LSP clients know that a file has been renamed
 
@@ -68,7 +89,7 @@ Lets LSP clients know that a file has been renamed
 <
 
 
-SNACKS.RENAME.RENAME_FILE() *snacks-rename-module-snacks.rename.rename_file()*
+`Snacks.rename.rename_file()`                    *Snacks.rename.rename_file()*
 
 Prompt for the new filename, do the rename, and trigger LSP handlers
 

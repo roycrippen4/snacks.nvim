@@ -1,10 +1,11 @@
-*snacks-words.txt*           For Neovim          Last change: 2024 November 07
+*snacks-words.txt*                                                 snacks.nvim
 
 ==============================================================================
 Table of Contents                             *snacks-words-table-of-contents*
 
 1. Config                                                |snacks-words-config|
 2. Module                                                |snacks-words-module|
+  - Snacks.words.clear()            |snacks-words-module-snacks.words.clear()|
   - Snacks.words.is_enabled()  |snacks-words-module-snacks.words.is_enabled()|
   - Snacks.words.jump()              |snacks-words-module-snacks.words.jump()|
 Auto-show LSP references and quickly navigate between them
@@ -18,6 +19,11 @@ Auto-show LSP references and quickly navigate between them
     {
       enabled = true, -- enable/disable the plugin
       debounce = 200, -- time in ms to wait before updating
+      notify_jump = false, -- show a notification when jumping
+      notify_end = true, -- show a notification when reaching the end
+      foldopen = true, -- open folds after jumping
+      jumplist = true, -- set jump point before jumping
+      modes = { "n", "i", "c" }, -- modes to show references
     }
 <
 
@@ -26,7 +32,14 @@ Auto-show LSP references and quickly navigate between them
 2. Module                                                *snacks-words-module*
 
 
-SNACKS.WORDS.IS_ENABLED()      *snacks-words-module-snacks.words.is_enabled()*
+`Snacks.words.clear()`                                  *Snacks.words.clear()*
+
+>lua
+    Snacks.words.clear()
+<
+
+
+`Snacks.words.is_enabled()`                        *Snacks.words.is_enabled()*
 
 >lua
     ---@param buf number?
@@ -34,7 +47,7 @@ SNACKS.WORDS.IS_ENABLED()      *snacks-words-module-snacks.words.is_enabled()*
 <
 
 
-SNACKS.WORDS.JUMP()                  *snacks-words-module-snacks.words.jump()*
+`Snacks.words.jump()`                                    *Snacks.words.jump()*
 
 >lua
     ---@param count number

@@ -1,4 +1,4 @@
-*snacks-terminal.txt*         For Neovim         Last change: 2024 November 07
+*snacks-terminal.txt*                                              snacks.nvim
 
 ==============================================================================
 Table of Contents                          *snacks-terminal-table-of-contents*
@@ -81,12 +81,14 @@ TERMINAL                                     *snacks-terminal-styles-terminal*
       wo = {},
       keys = {
         gf = function(self)
-          local f = vim.fn.findfile(vim.fn.expand("<cfile>"))
+          local f = vim.fn.findfile(vim.fn.expand("<cfile>"), "**")
           if f == "" then
             Snacks.notify.warn("No file under cursor")
           else
-            self:close()
-            vim.cmd("e " .. f)
+            self:hide()
+            vim.schedule(function()
+              vim.cmd("e " .. f)
+            end)
           end
         end,
         term_normal = {
@@ -132,7 +134,7 @@ TERMINAL                                     *snacks-terminal-styles-terminal*
 <
 
 
-SNACKS.TERMINAL()                   *snacks-terminal-module-snacks.terminal()*
+`Snacks.terminal()`                                        *Snacks.terminal()*
 
 >lua
     ---@type fun(cmd?: string|string[], opts?: snacks.terminal.Opts): snacks.terminal
@@ -140,7 +142,7 @@ SNACKS.TERMINAL()                   *snacks-terminal-module-snacks.terminal()*
 <
 
 
-SNACKS.TERMINAL.OPEN()         *snacks-terminal-module-snacks.terminal.open()*
+`Snacks.terminal.open()`                              *Snacks.terminal.open()*
 
 Open a new terminal window.
 
@@ -151,7 +153,7 @@ Open a new terminal window.
 <
 
 
-SNACKS.TERMINAL.TOGGLE()     *snacks-terminal-module-snacks.terminal.toggle()*
+`Snacks.terminal.toggle()`                          *Snacks.terminal.toggle()*
 
 Toggle a terminal window. The terminal id is based on the `cmd`, `cwd`, `env`
 and `vim.v.count1` options.

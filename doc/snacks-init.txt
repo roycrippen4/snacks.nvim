@@ -1,4 +1,4 @@
-*snacks-init.txt*           For Neovim           Last change: 2024 November 07
+*snacks-init.txt*                                                  snacks.nvim
 
 ==============================================================================
 Table of Contents                              *snacks-init-table-of-contents*
@@ -61,7 +61,7 @@ Table of Contents                              *snacks-init-table-of-contents*
 <
 
 
-SNACKS.CONFIG.GET()                   *snacks-init-module-snacks.config.get()*
+`Snacks.config.get()`                                    *Snacks.config.get()*
 
 >lua
     ---@generic T: table
@@ -73,7 +73,7 @@ SNACKS.CONFIG.GET()                   *snacks-init-module-snacks.config.get()*
 <
 
 
-SNACKS.CONFIG.STYLE()               *snacks-init-module-snacks.config.style()*
+`Snacks.config.style()`                                *Snacks.config.style()*
 
 Register a new window style config.
 
@@ -84,7 +84,7 @@ Register a new window style config.
 <
 
 
-SNACKS.SETUP()                             *snacks-init-module-snacks.setup()*
+`Snacks.setup()`                                              *Snacks.setup()*
 
 >lua
     ---@param opts snacks.Config?

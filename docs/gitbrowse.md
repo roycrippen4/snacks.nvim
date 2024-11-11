@@ -18,8 +18,10 @@ Open the repo of the active file in the browser (e.g., GitHub)
     end
     vim.ui.open(url)
   end,
+  ---@type "repo" | "branch" | "file"
+  what = "file", -- what to open. not all remotes support all types
   -- patterns to transform remotes to an actual URL
-  patterns = {
+  remote_patterns = {
     { "^(https?://.*)%.git$"              , "%1" },
     { "^git@(.+):(.+)%.git$"              , "https://%1/%2" },
     { "^git@(.+):(.+)$"                   , "https://%1/%2" },
@@ -33,6 +35,16 @@ Open the repo of the active file in the browser (e.g., GitHub)
     { ":%d+"                              , "" },
     { "%.git$"                            , "" },
   },
+  url_patterns = {
+    ["github.com"] = {
+      branch = "/tree/{branch}",
+      file = "/blob/{branch}/{file}#L{line}",
+    },
+    ["gitlab.com"] = {
+      branch = "/-/tree/{branch}",
+      file = "/-/blob/{branch}/{file}#L{line}",
+    },
+  },
 }
 ```
 
@@ -43,6 +55,14 @@ Open the repo of the active file in the browser (e.g., GitHub)
 ```lua
 ---@type fun(opts?: snacks.gitbrowse.Config)
 Snacks.gitbrowse()
+```
+
+### `Snacks.gitbrowse.get_url()`
+
+```lua
+---@param repo string
+---@param opts? snacks.gitbrowse.Config
+Snacks.gitbrowse.get_url(repo, opts)
 ```
 
 ### `Snacks.gitbrowse.open()`
